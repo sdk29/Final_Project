@@ -55,8 +55,8 @@ FinalProjectApp
   m_HaarEyePairSmall = LoadHaarCascade("haarcascade_mcs_eyepair_small.xml");
   m_HaarEyePairBig = LoadHaarCascade("haarcascade_mcs_eyepair_big.xml");
   m_HaarFrontalFace = LoadHaarCascade("haarcascade_frontalface_default.xml");
-  //m_HaarMouth = LoadHaarCascade("haarcascade_mcs_mouth.xml");
-  //m_HaarNose = LoadHaarCascade("haarcascade_mcs_nose.xml");
+  m_HaarMouth = LoadHaarCascade("haarcascade_mcs_mouth.xml");
+  m_HaarNose = LoadHaarCascade("haarcascade_mcs_nose.xml");
 
 }
 
