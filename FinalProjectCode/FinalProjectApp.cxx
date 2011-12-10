@@ -59,6 +59,12 @@ FinalProjectApp
   //m_HaarMouth = LoadHaarCascade("haarcascade_mcs_mouth.xml");
   //m_HaarNose = LoadHaarCascade("haarcascade_mcs_nose.xml");
 
+  // Initialize a log file with hard coded headers
+  m_logFile = fopen("Log File.csv","w");
+  fprintf(m_logFile, "%s,%s,%s,%s,%s,%s\n", "Time", "Trial", "Feature", "Intertrial", "ButtonPress", "Reach");
+
+  // Initialize the frame index for the arrays
+  // m_frame = 0;
 }
 
 
@@ -76,13 +82,9 @@ FinalProjectApp
   delete[] m_CameraFrameRGBBuffer;
   delete[] m_TempRGBABuffer;
 
-  FILE *logFile = fopen("Log File.csv","w");
-
-  fprintf(logFile, "%s,%s,%s,%s,%s,%s\n", "Time", "Trial", "Feature", "Intertrial", "ButtonPress", "Reach");
-
-  fprintf(logFile, "%f,%i,%i,%i,%s,%s\n", 3.1234, 1, 1, 1, "Nan", "Nan");
-
-  fclose(logFile);
+  // Attend feature definitions to the log file
+  fprintf(m_logFile, "\n%s,\t%s,\t%s,\t%s,\t%s,\t%s", "bigEyePair = 1", "smallEyePair = 2", "frontalFace = 3", "leftRightEye = 4", "mouth = 5", "nose = 6");
+  fclose(m_logFile);
 }
 
 
@@ -196,6 +198,12 @@ FinalProjectApp
 		emit SendImage( processedImage );
 		emit updateAttentionBar( m_attentionCounter );
     }
+
+    /** Outside of filter but inside of connected camera */
+    m_InterTrial = 1;
+    m_ButtonPress = 0;
+    m_Reach = 0;
+
   }
 }
 
@@ -363,36 +371,42 @@ void
 FinalProjectApp
 ::SetRadioButtonEyePairBig(bool bigEyePair){
 	m_EyePairBigEnabled = bigEyePair;
+  m_Feature = 1;
 }
 
 void 
 FinalProjectApp
 ::SetRadioButtonEyePairSmall(bool smallEyePair){
 	m_EyePairSmallEnabled = smallEyePair;
+  m_Feature = 2;
   }
 
 void 
 FinalProjectApp
 ::SetRadioButtonFrontalFace(bool frontalFace){
 	m_FrontalFaceEnabled = frontalFace;
+  m_Feature = 3;
 }
 
 void 
 FinalProjectApp
 ::SetRadioButtonLeftRightEye(bool leftRightEye){
 	m_LeftRightEyeEnabled = leftRightEye;
+  m_Feature = 4;
 }
 
 void 
 FinalProjectApp
 ::SetRadioButtonMouth(bool mouth){
 	m_MouthEnabled = mouth;
+  m_Feature = 5;
 }
 
 void 
 FinalProjectApp
 ::SetRadioButtonNose(bool nose){
 	m_NoseEnabled = nose;
+  m_Feature = 6;
 }
 
 CvHaarClassifierCascade* 
@@ -411,23 +425,35 @@ CvRect
 FinalProjectApp
 ::TrackFeature(IplImage* inputImg, CvHaarClassifierCascade* m_Cascade)
 {
-	
+	// Create a frame index for the arrays
+  // m_frame = m_frame++
+
 	// Perform face detection on the input image, using the given Haar classifier
 	CvRect eyeRect = detectEyesInImage(inputImg, m_Cascade);
 
+  double TimeStamp = 1.00000;
+
 	// Make sure a valid face was detected.
 	if (eyeRect.width > 0) {
-		//uncomment for debugging
+	  //uncomment for debugging
 		//printf("Detected a feature at (%d,%d)!\n", eyeRect.x, eyeRect.y);
-		if(m_attentionCounter < m_Threshold)
-			{
+		if(m_attentionCounter < m_Threshold) {
 				m_attentionCounter++;
 			}
 			
+    m_Detect = 1;
 	}
-	else if(m_attentionCounter >0){
+  // No valid face was detected
+  else {
+    if(m_attentionCounter >0) {
 				m_attentionCounter--;
 			}
+
+    m_Detect = 0;
+  }
+
+  // Document this frame for the log file
+  LogFrame(m_logFile, TimeStamp, m_Trial, m_Feature, m_InterTrial, m_ButtonPress, m_Reach, m_Detect);
 
 	// Trace a red rectangle over the detected area
 	cvRectangle(inputImg,cvPoint(eyeRect.x,eyeRect.y), cvPoint(eyeRect.x+eyeRect.width,eyeRect.y+eyeRect.height), CV_RGB(255,0,0), 1, 8, 0);
@@ -583,3 +609,21 @@ CvRect FinalProjectApp
     
     return intersection; 
 } 
+
+void 
+FinalProjectApp
+::LogFrame(FILE *m_logFile, double TimeStamp, int m_Trial, int m_Feature, bool m_InterTrial, bool m_ButtonPress, bool m_Reach, bool m_Detect)
+{
+  if(m_InterTrial) {
+    fprintf(m_logFile, "%f,%i,%i,%i,%s,%s\n", TimeStamp, m_Trial, m_Feature, m_Detect, "Nan", "Nan");
+  }
+  else if(m_ButtonPress) {
+    fprintf(m_logFile, "%f,%i,%i,%s,%i,%s\n", TimeStamp, m_Trial, m_Feature, "Nan", m_Detect, "Nan");
+  }
+  else if(m_Reach) {
+    fprintf(m_logFile, "%f,%i,%i,%s,%s,%i\n", TimeStamp, m_Trial, m_Feature, "Nan", "Nan", m_Detect);
+  }
+  else {
+    fprintf(m_logFile, "%f,%i,%i,%s,%s,%s\n", TimeStamp, m_Trial, m_Feature, "Nan", "Nan", "Nan");
+  }
+}
