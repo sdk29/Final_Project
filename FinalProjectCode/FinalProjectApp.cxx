@@ -15,6 +15,7 @@
 
 #include <time.h>
 #include "FinalProjectApp.h"
+#include <string.h>
 
 FinalProjectApp
 ::FinalProjectApp()
@@ -55,8 +56,8 @@ FinalProjectApp
   m_HaarEyePairSmall = LoadHaarCascade("haarcascade_mcs_eyepair_small.xml");
   m_HaarEyePairBig = LoadHaarCascade("haarcascade_mcs_eyepair_big.xml");
   m_HaarFrontalFace = LoadHaarCascade("haarcascade_frontalface_default.xml");
-  m_HaarMouth = LoadHaarCascade("haarcascade_mcs_mouth.xml");
-  m_HaarNose = LoadHaarCascade("haarcascade_mcs_nose.xml");
+  //m_HaarMouth = LoadHaarCascade("haarcascade_mcs_mouth.xml");
+  //m_HaarNose = LoadHaarCascade("haarcascade_mcs_nose.xml");
 
 }
 
@@ -74,6 +75,14 @@ FinalProjectApp
 
   delete[] m_CameraFrameRGBBuffer;
   delete[] m_TempRGBABuffer;
+
+  FILE *logFile = fopen("Log File.csv","w");
+
+  fprintf(logFile, "%s,%s,%s,%s,%s,%s\n", "Time", "Trial", "Feature", "Intertrial", "ButtonPress", "Reach");
+
+  fprintf(logFile, "%f,%i,%i,%i,%s,%s\n", 3.1234, 1, 1, 1, "Nan", "Nan");
+
+  fclose(logFile);
 }
 
 
