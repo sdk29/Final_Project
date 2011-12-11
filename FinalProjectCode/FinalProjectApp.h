@@ -147,23 +147,6 @@ protected:
   /** Find faces or eyes in an image using code from http://www.shervinemami.co.cc/faceRecognition.html */
   CvRect detectEyesInImage(IplImage *inputImg, CvHaarClassifierCascade* cascade);
 
-  /** Initialize a frame index for the arrays */
-  int m_frame;
-
-  /** Initialize a log file */
-  FILE *m_logFile;
-
-  /** Write the frame variables to the log file */
-  void LogFrame(FILE *m_logFile, double TimeStamp, int m_Trial, int m_Feature, bool m_InterTrial, bool m_ButtonPress, bool m_Reach, bool m_Detect);
-
-  /** Initialize log file variables */
-  bool m_Detect;
-  int m_Trial;
-  int m_Feature;
-  bool m_InterTrial;
-  bool m_ButtonPress;
-  bool m_Reach;
-
   /** Convert IplImage to QtImage and vice-versa from http://umanga.wordpress.com/2010/04/19/how-to-covert-qt-qimage-into-opencv-iplimage-and-wise-versa/ */
   QImage* IplImage2QImage(IplImage *iplImg);
   IplImage* QImage2IplImage(QImage *qimg);
@@ -178,6 +161,24 @@ protected:
 
   /** Counter to see how much we've been successfully tracking */
   int m_attentionCounter;
+
+  /** Initialize a frame index for the arrays */
+  int m_frame;
+
+  /** Initialize a log file */
+  FILE *m_logFile;
+
+  /** Write the frame variables to the log file */
+  void SaveLog();
+
+  /** Initialize log file variables */
+  int *m_Detect;
+  double *m_TimeStamp;
+  int *m_Trial;
+  int *m_Feature;
+  int *m_InterTrial;
+  int *m_ButtonPress;
+  int *m_Reach;
 };
 
 #endif

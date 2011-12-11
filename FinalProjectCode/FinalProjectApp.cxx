@@ -61,10 +61,20 @@ FinalProjectApp
 
   // Initialize a log file with hard coded headers
   m_logFile = fopen("Log File.csv","w");
-  fprintf(m_logFile, "%s,%s,%s,%s,%s,%s\n", "Time", "Trial", "Feature", "Intertrial", "ButtonPress", "Reach");
+  fprintf(m_logFile, "%s,%s,%s,%s,%s,%s,%s\n", "Time", "Trial", "Feature", "Detect", "Intertrial", "ButtonPress", "Reach");
 
   // Initialize the frame index for the arrays
-  // m_frame = 0;
+  m_frame = 0;
+
+  /** Initialize log file dynamic arrays */
+  int TotalFrames = 1440; // 3 frames per second * 60 seconds per minute * 8 minutes
+  m_Detect = new int [TotalFrames];
+  m_TimeStamp = new double [TotalFrames];
+  m_Trial = new int [TotalFrames];
+  m_Feature = new int [TotalFrames];
+  m_InterTrial = new int [TotalFrames];
+  m_ButtonPress = new int [TotalFrames];
+  m_Reach = new int [TotalFrames];
 }
 
 
@@ -79,10 +89,20 @@ FinalProjectApp
     this->DisconnectCamera();
   }
 
+  SaveLog();
+
   delete[] m_CameraFrameRGBBuffer;
   delete[] m_TempRGBABuffer;
 
-  // Attend feature definitions to the log file
+  delete[] m_Detect;
+  delete[] m_TimeStamp;
+  delete[] m_Trial;
+  delete[] m_Feature;
+  delete[] m_InterTrial;
+  delete[] m_ButtonPress;
+  delete[] m_Reach;
+
+  // Append feature definitions to the log file
   fprintf(m_logFile, "\n%s,\t%s,\t%s,\t%s,\t%s,\t%s", "bigEyePair = 1", "smallEyePair = 2", "frontalFace = 3", "leftRightEye = 4", "mouth = 5", "nose = 6");
   fclose(m_logFile);
 }
@@ -157,53 +177,64 @@ FinalProjectApp
 	*/
     if(m_FilterEnabled)
     {
-		//Determine which radiobutton is selected and track appropriately
+		  //Determine which radiobutton is selected and track appropriately
 		
-		if(m_EyePairBigEnabled)
-		{
-			CvRect m_EyePairBig = TrackFeature(m_CameraImageOpenCV, m_HaarEyePairBig);
-			
-		}
-		else if(m_EyePairSmallEnabled)
-		{
-			CvRect m_EyePairSmall = TrackFeature(m_CameraImageOpenCV, m_HaarEyePairSmall);
-		}
-		else if(m_FrontalFaceEnabled)
-		{
-			CvRect m_FrontalFace = TrackFeature(m_CameraImageOpenCV, m_HaarFrontalFace);
-		}
-		else if(m_LeftRightEyeEnabled)
-		{
-			CvRect m_LeftEye = TrackFeature(m_CameraImageOpenCV, m_HaarLeftEye);
-			CvRect m_RightEye = TrackFeature(m_CameraImageOpenCV, m_HaarRightEye);
-		}
-		else if(m_MouthEnabled)
-		{
-			CvRect m_Mouth = TrackFeature(m_CameraImageOpenCV, m_HaarMouth);
-		}
-		else if(m_NoseEnabled)
-		{
-			CvRect m_Nose = TrackFeature(m_CameraImageOpenCV, m_HaarNose);
-		}
+		  if(m_EyePairBigEnabled)
+		  {
+			  CvRect m_EyePairBig = TrackFeature(m_CameraImageOpenCV, m_HaarEyePairBig);
+        m_Feature[m_frame] = 1;
+		  }
+		  else if(m_EyePairSmallEnabled)
+		  {
+			  CvRect m_EyePairSmall = TrackFeature(m_CameraImageOpenCV, m_HaarEyePairSmall);
+        m_Feature[m_frame] = 2;
+		  }
+		  else if(m_FrontalFaceEnabled)
+		  {
+			  CvRect m_FrontalFace = TrackFeature(m_CameraImageOpenCV, m_HaarFrontalFace);
+        m_Feature[m_frame] = 3;
+		  }
+		  else if(m_LeftRightEyeEnabled)
+		  {
+			  CvRect m_LeftEye = TrackFeature(m_CameraImageOpenCV, m_HaarLeftEye);
+			  CvRect m_RightEye = TrackFeature(m_CameraImageOpenCV, m_HaarRightEye);
+        m_Feature[m_frame] = 4;
+		  }
+		  else if(m_MouthEnabled)
+		  {
+			  CvRect m_Mouth = TrackFeature(m_CameraImageOpenCV, m_HaarMouth);
+        m_Feature[m_frame] = 5;
+		  }
+		  else if(m_NoseEnabled)
+		  {
+			  CvRect m_Nose = TrackFeature(m_CameraImageOpenCV, m_HaarNose);
+        m_Feature[m_frame] = 6;
+		  }
 		
 
-		QImage processedImage = *IplImage2QImage(m_CameraImageOpenCV);
-		emit SendImage( processedImage );
-		emit updateAttentionBar( m_attentionCounter );
+		  QImage processedImage = *IplImage2QImage(m_CameraImageOpenCV);
+		  emit SendImage( processedImage );
+		  emit updateAttentionBar( m_attentionCounter );
     }
+
     else
     {
-		QImage processedImage = *IplImage2QImage(m_CameraImageOpenCV);
-		// Send a copy of the image out via signals/slots
-		emit SendImage( processedImage );
-		emit updateAttentionBar( m_attentionCounter );
+      m_Detect[m_frame] = 99;
+      m_Feature[m_frame] = 99;
+      m_TimeStamp[m_frame] = m_frame;
+		  QImage processedImage = *IplImage2QImage(m_CameraImageOpenCV);
+		  // Send a copy of the image out via signals/slots
+		  emit SendImage( processedImage );
+		  emit updateAttentionBar( m_attentionCounter );
     }
+    // Within capture image but outside filter if statement
+    m_Trial[m_frame] = m_frame;
+    m_InterTrial[m_frame] = m_frame;
+    m_ButtonPress[m_frame] = m_frame;
+    m_Reach[m_frame] = m_frame;
 
-    /** Outside of filter but inside of connected camera */
-    m_InterTrial = 1;
-    m_ButtonPress = 0;
-    m_Reach = 0;
-
+    // Create a frame index
+    m_frame++;
   }
 }
 
@@ -371,42 +402,36 @@ void
 FinalProjectApp
 ::SetRadioButtonEyePairBig(bool bigEyePair){
 	m_EyePairBigEnabled = bigEyePair;
-  m_Feature = 1;
 }
 
 void 
 FinalProjectApp
 ::SetRadioButtonEyePairSmall(bool smallEyePair){
 	m_EyePairSmallEnabled = smallEyePair;
-  m_Feature = 2;
   }
 
 void 
 FinalProjectApp
 ::SetRadioButtonFrontalFace(bool frontalFace){
 	m_FrontalFaceEnabled = frontalFace;
-  m_Feature = 3;
 }
 
 void 
 FinalProjectApp
 ::SetRadioButtonLeftRightEye(bool leftRightEye){
 	m_LeftRightEyeEnabled = leftRightEye;
-  m_Feature = 4;
 }
 
 void 
 FinalProjectApp
 ::SetRadioButtonMouth(bool mouth){
 	m_MouthEnabled = mouth;
-  m_Feature = 5;
 }
 
 void 
 FinalProjectApp
 ::SetRadioButtonNose(bool nose){
 	m_NoseEnabled = nose;
-  m_Feature = 6;
 }
 
 CvHaarClassifierCascade* 
@@ -425,13 +450,11 @@ CvRect
 FinalProjectApp
 ::TrackFeature(IplImage* inputImg, CvHaarClassifierCascade* m_Cascade)
 {
-	// Create a frame index for the arrays
-  // m_frame = m_frame++
-
 	// Perform face detection on the input image, using the given Haar classifier
 	CvRect eyeRect = detectEyesInImage(inputImg, m_Cascade);
 
-  double TimeStamp = 1.00000;
+  // Time stamp when the frame was taken
+  m_TimeStamp[m_frame] = m_frame;
 
 	// Make sure a valid face was detected.
 	if (eyeRect.width > 0) {
@@ -441,7 +464,7 @@ FinalProjectApp
 				m_attentionCounter++;
 			}
 			
-    m_Detect = 1;
+    m_Detect[m_frame] = 1;
 	}
   // No valid face was detected
   else {
@@ -449,11 +472,8 @@ FinalProjectApp
 				m_attentionCounter--;
 			}
 
-    m_Detect = 0;
+    m_Detect[m_frame] = 0;
   }
-
-  // Document this frame for the log file
-  LogFrame(m_logFile, TimeStamp, m_Trial, m_Feature, m_InterTrial, m_ButtonPress, m_Reach, m_Detect);
 
 	// Trace a red rectangle over the detected area
 	cvRectangle(inputImg,cvPoint(eyeRect.x,eyeRect.y), cvPoint(eyeRect.x+eyeRect.width,eyeRect.y+eyeRect.height), CV_RGB(255,0,0), 1, 8, 0);
@@ -612,18 +632,18 @@ CvRect FinalProjectApp
 
 void 
 FinalProjectApp
-::LogFrame(FILE *m_logFile, double TimeStamp, int m_Trial, int m_Feature, bool m_InterTrial, bool m_ButtonPress, bool m_Reach, bool m_Detect)
+::SaveLog()
 {
-  if(m_InterTrial) {
-    fprintf(m_logFile, "%f,%i,%i,%i,%s,%s\n", TimeStamp, m_Trial, m_Feature, m_Detect, "Nan", "Nan");
+  std::cout << m_frame << "\n";
+  std::cout << m_Feature[m_frame-1] << "\n";
+  std::cout << m_Detect[m_frame-1] << "\n";
+  std::cout << m_InterTrial[m_frame-1] << "\n";
+  std::cout << m_ButtonPress[m_frame-1] << "\n";
+  std::cout << m_Reach[m_frame-1] << "\n";
+  for(int i = 0; i < m_frame; i++) {
+      fprintf(m_logFile, "%f,%i,%i,%i,%i,%i,%i\n", m_TimeStamp[i], m_Trial[i], m_Feature[i], m_Detect[i], m_InterTrial[i], m_ButtonPress[i], m_Reach[i]);
   }
-  else if(m_ButtonPress) {
-    fprintf(m_logFile, "%f,%i,%i,%s,%i,%s\n", TimeStamp, m_Trial, m_Feature, "Nan", m_Detect, "Nan");
-  }
-  else if(m_Reach) {
-    fprintf(m_logFile, "%f,%i,%i,%s,%s,%i\n", TimeStamp, m_Trial, m_Feature, "Nan", "Nan", m_Detect);
-  }
-  else {
-    fprintf(m_logFile, "%f,%i,%i,%s,%s,%s\n", TimeStamp, m_Trial, m_Feature, "Nan", "Nan", "Nan");
-  }
+  
+  m_frame = 0;
+  std::cout << "Saved log file";
 }
